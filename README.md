@@ -31,7 +31,7 @@ use {
 Using [vim-plug](https://github.com/junegunn/vim-plug):
 
 ```viml
-Plug 'olrtg/nvim-rename-state'
+Plug 'olrtg/nvim-rename-state', { 'branch': 'master' }
 ```
 
 ## Contributing
