@@ -9,7 +9,11 @@ M.rename_state = function()
 
   local node = ts_utils.get_node_at_cursor()
   local node_name = vim.treesitter.query.get_node_text(node, 0)
-  local new_node_name = vim.fn.input("New name: ")
+  local new_node_name = vim.fn.input("New name: ", node_name)
+
+  if new_node_name == "" then
+    return
+  end
 
   local node_params = vim.lsp.util.make_position_params()
   node_params.newName = new_node_name
