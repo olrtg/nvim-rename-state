@@ -24,9 +24,12 @@ M.rename_state = function()
     vim.lsp.util.apply_workspace_edit(result, client.offset_encoding)
 
     local filetype = vim.api.nvim_buf_get_option(0, "filetype")
-    local is_jsx_file = filetype == "javascriptreact" or filetype == "typescriptreact"
+    local is_valid_filetype = filetype == "javascript"
+      or filetype == "typescript"
+      or filetype == "javascriptreact"
+      or filetype == "typescriptreact"
 
-    if not is_jsx_file then
+    if not is_valid_filetype then
       return
     end
 
