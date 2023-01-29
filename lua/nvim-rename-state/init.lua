@@ -1,7 +1,8 @@
 local M = {}
 
+-- @deprecated setup function is no longer needed
 M.setup = function()
-  vim.api.nvim_create_user_command("RenameState", M.rename_state, { nargs = "?" })
+  vim.notify("nvim-rename-state: setup function is now deprecated since is no longer needed", vim.log.levels.WARN)
 end
 
 M.rename_state = function(command_obj)
