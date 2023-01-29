@@ -1,61 +1,91 @@
 local M = {}
 
 M.setup = function()
-  vim.api.nvim_create_user_command("RenameState", M.rename_state, {})
+  vim.api.nvim_create_user_command("RenameState", M.rename_state, { nargs = "?" })
 end
 
-M.rename_state = function()
+M.rename_state = function(command_obj)
   local ts_utils = require("nvim-treesitter.ts_utils")
 
-  local node = ts_utils.get_node_at_cursor()
-  local node_name = vim.treesitter.query.get_node_text(node, 0)
-  local new_node_name = vim.fn.input("New name: ", node_name)
+  local query_string = [[
+    (variable_declarator
+      name: (array_pattern
+        (identifier) @getter
+        (identifier) @setter (#match? @setter "^set")
+      )
 
-  if new_node_name == "" then
+      (call_expression
+         function: (identifier) @hook (#match? @hook "useState|createSignal")
+      )
+    )
+  ]]
+
+  local parser = vim.treesitter.get_parser(0, "typescript")
+  local ok, query = pcall(vim.treesitter.query.parse_query, parser:lang(), query_string)
+
+  if not ok then
     return
   end
 
-  local node_params = vim.lsp.util.make_position_params()
-  node_params.newName = new_node_name
+  local tree = parser:parse()[1]
+  local current_row = vim.api.nvim_win_get_cursor(0)[1]
 
-  vim.lsp.buf_request(0, "textDocument/rename", node_params, function(err, result, ctx, config)
-    local client = vim.lsp.get_client_by_id(ctx.client_id)
+  local new_getter_name = nil
 
-    vim.lsp.util.apply_workspace_edit(result, client.offset_encoding)
+  for capture, capture_node in query:iter_captures(tree:root(), 0, current_row - 1, current_row) do
+    local capture_name = query.captures[capture]
+    local start_row, start_col = capture_node:range()
 
-    local filetype = vim.api.nvim_buf_get_option(0, "filetype")
-    local is_valid_filetype = filetype == "javascript"
-      or filetype == "typescript"
-      or filetype == "javascriptreact"
-      or filetype == "typescriptreact"
+    if capture_name == "getter" then
+      vim.api.nvim_win_set_cursor(0, { start_row + 1, start_col })
 
-    if not is_valid_filetype then
-      return
+      if command_obj.args == "" then
+        local node = ts_utils.get_node_at_cursor()
+        local node_name = vim.treesitter.query.get_node_text(node, 0)
+        local new_node_name = vim.fn.input({ prompt = "New name: ", default = node_name })
+        new_getter_name = new_node_name
+      else
+        new_getter_name = command_obj.args
+      end
+
+      if new_getter_name == "" then
+        return
+      end
+
+      local node_params = vim.lsp.util.make_position_params()
+      node_params.newName = new_getter_name
+
+      local clients = vim.lsp.buf_request_sync(0, "textDocument/rename", node_params)
+
+      if clients == nil then
+        return
+      end
+
+      for key, _ in pairs(clients) do
+        local client = vim.lsp.get_client_by_id(key)
+        vim.lsp.util.apply_workspace_edit(clients[key].result, client.offset_encoding)
+      end
     end
 
-    local counterpart = ts_utils.get_next_node(node) or ts_utils.get_previous_node(node)
-    local counterpart_name = vim.treesitter.query.get_node_text(counterpart, 0)
-    local new_counterpart_name = ""
+    if capture_name == "setter" then
+      vim.api.nvim_win_set_cursor(0, { start_row + 1, start_col })
+      local utils = require("nvim-rename-state.utils")
 
-    ts_utils.goto_node(counterpart)
+      local node_params = vim.lsp.util.make_position_params()
+      node_params.newName = "set" .. utils.upperfirst(new_getter_name)
 
-    local utils = require("nvim-rename-state.utils")
+      local clients = vim.lsp.buf_request_sync(0, "textDocument/rename", node_params)
 
-    if not utils.startswith(node_name, "set") and utils.startswith(counterpart_name, "set") then
-      new_counterpart_name = "set" .. utils.upperfirst(new_node_name)
-    elseif utils.startswith(node_name, "set") and not utils.startswith(counterpart_name, "set") then
-      new_counterpart_name = utils.lowerfirst(utils.chopstart(new_node_name, "set"))
-    else
-      return
+      if clients == nil then
+        return
+      end
+
+      for key, _ in pairs(clients) do
+        local client = vim.lsp.get_client_by_id(key)
+        vim.lsp.util.apply_workspace_edit(clients[key].result, client.offset_encoding)
+      end
     end
-
-    local counterpart_params = vim.lsp.util.make_position_params()
-    counterpart_params.newName = new_counterpart_name
-
-    vim.lsp.buf_request(0, "textDocument/rename", counterpart_params, function(cerr, cresult, cctx, cconfig)
-      vim.lsp.util.apply_workspace_edit(cresult, client.offset_encoding)
-    end)
-  end)
+  end
 end
 
 return M
