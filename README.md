@@ -12,7 +12,7 @@ const [anchor, setAnchor] = useState(null)
 
 ## Features
 
-- Leverages Neovim's Treesitter integration (requires neovim >= 0.5.0).
+- Leverages [Treesitter](https://tree-sitter.github.io/tree-sitter/) (requires [neovim](https://neovim.io/) >= 0.5.0).
 - Supports Javascript and Typescript files.
 - Supports [React](https://reactjs.org/) and [Solid](https://www.solidjs.com/) state hooks.
 
@@ -33,7 +33,7 @@ use { "olrtg/nvim-rename-state" }
 [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
-Plug 'catppuccin/nvim'
+Plug 'olrtg/nvim-rename-state'
 ```
 
 ## Usage
