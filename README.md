@@ -6,48 +6,50 @@ Rename the getter and a setter of a state hook in react/solidjs at the same time
 // Initial code
 const [anchorEl, setAnchorEl] = useState(null)
 
-// If you rename `anchorEl` to `anchor`
-// If you rename `setAnchorEl` to `setAnchor`
+// After renaming with `:RenameState` or `:RenameState anchor`
 const [anchor, setAnchor] = useState(null)
 ```
 
-## Getting started
+## Features
 
-### Prerequisites
+- Leverages [Treesitter](https://tree-sitter.github.io/tree-sitter/) (requires [neovim](https://neovim.io/) >= 0.5.0).
+- Supports Javascript and Typescript files.
+- Supports [React](https://reactjs.org/) and [Solid](https://www.solidjs.com/) state hooks.
 
-To use `nvim-rename-state`, since it makes use of [Neovim](https://github.com/neovim/neovim)'s built-in LSP, you will need to have installed [Neovim v0.5.0](https://github.com/neovim/neovim/releases/tag/v0.5.0) or [newer](https://github.com/neovim/neovim/releases/latest) and [treesitter](https://github.com/nvim-treesitter/nvim-treesitter).
+## Installation
 
-### Installation
-
-Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
-
-```lua
-use {
-  'olrtg/nvim-rename-state',
-  branch = 'main'
-}
-```
-
-Using [vim-plug](https://github.com/junegunn/vim-plug):
-
-```viml
-Plug 'olrtg/nvim-rename-state', { 'branch': 'main' }
-```
-
-### Loading the plugin
-
-Either in any lua file that gets loaded:
+[lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```lua
-require'nvim-rename-state'.setup{}
+{ "olrtg/nvim-rename-state" }
 ```
 
-Or in `init.vim`
+[packer.nvim](https://github.com/wbthomason/packer.nvim)
 
-```viml
-lua require('nvim-rename-state')
+```lua
+use { "olrtg/nvim-rename-state" }
+```
+
+[vim-plug](https://github.com/junegunn/vim-plug)
+
+```vim
+Plug 'olrtg/nvim-rename-state'
+```
+
+## Usage
+
+Put your cursor in the row of the defined `useState` or `createSignal` hook and use:
+
+```vim
+:RenameState
+```
+
+Or if you want to pass the new name for the hook in advance:
+
+```vim
+:RenameState <new_name>
 ```
 
 ## Contributing
 
-All contributions are welcome! Just open a pull request or an issue.
+All contributions are welcomed! Just open a pull request or an issue.
