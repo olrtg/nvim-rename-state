@@ -6,9 +6,17 @@ M.setup = function()
 end
 
 M.rename_state = function(command_obj)
-  local ts_utils = require("nvim-treesitter.ts_utils")
+  if
+    vim.bo.filetype ~= "javascript"
+    and vim.bo.filetype ~= "javascriptreact"
+    and vim.bo.filetype ~= "typescriptreact"
+  then
+    vim.notify("nvim-rename-state: only works with jsx/tsx files", vim.log.levels.ERROR)
+    return
+  end
 
   local query_string = [[
+    ;;query
     (variable_declarator
       name: (array_pattern
         (identifier) @getter
@@ -21,10 +29,11 @@ M.rename_state = function(command_obj)
     )
   ]]
 
-  local parser = vim.treesitter.get_parser(0, "typescript")
-  local ok, query = pcall(vim.treesitter.query.parse_query, parser:lang(), query_string)
+  local parser = vim.treesitter.get_parser()
+  local ok, query = pcall(vim.treesitter.query.parse, parser:lang(), query_string)
 
   if not ok then
+    vim.notify("nvim-rename-state: error parsing query", vim.log.levels.ERROR)
     return
   end
 
@@ -41,8 +50,14 @@ M.rename_state = function(command_obj)
       vim.api.nvim_win_set_cursor(0, { start_row + 1, start_col })
 
       if command_obj.args == "" then
-        local node = ts_utils.get_node_at_cursor()
-        local node_name = vim.treesitter.query.get_node_text(node, 0)
+        local node = vim.treesitter.get_node()
+
+        if node == nil then
+          vim.notify("nvim-rename-state: could not get node at cursor", vim.log.levels.ERROR)
+          return
+        end
+
+        local node_name = vim.treesitter.get_node_text(node, 0)
         local new_node_name = vim.fn.input({ prompt = "New name: ", default = node_name })
         new_getter_name = new_node_name
       else
@@ -64,6 +79,12 @@ M.rename_state = function(command_obj)
 
       for key, _ in pairs(clients) do
         local client = vim.lsp.get_client_by_id(key)
+
+        if client == nil then
+          vim.notify("nvim-rename-state: could not get client by id", vim.log.levels.ERROR)
+          return
+        end
+
         vim.lsp.util.apply_workspace_edit(clients[key].result, client.offset_encoding)
       end
     end
@@ -83,6 +104,12 @@ M.rename_state = function(command_obj)
 
       for key, _ in pairs(clients) do
         local client = vim.lsp.get_client_by_id(key)
+
+        if client == nil then
+          vim.notify("nvim-rename-state: could not get client by id", vim.log.levels.ERROR)
+          return
+        end
+
         vim.lsp.util.apply_workspace_edit(clients[key].result, client.offset_encoding)
       end
     end
